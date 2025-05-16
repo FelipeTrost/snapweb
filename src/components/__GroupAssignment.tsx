@@ -1,8 +1,3 @@
-// import { useRef, useState } from "react";
-// import { SnapStream } from "../snapstream";
-import { useSnapcast } from "../use-snapcast";
-import { config, } from "../config";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import {
   DndContext,
   DragEndEvent,
@@ -19,11 +14,11 @@ import {
 } from "@mui/icons-material";
 import { Slider } from "./ui/slider";
 import { useGroupValueChange } from "../volume-utils";
+import { config } from "../config";
 import { Button } from "./ui/button";
 import { Speaker } from "lucide-react";
-import { OnDevicePlayerControl } from "./OnDevicePlayerControl";
 
-function AssignmentClient({ client }: { client: Snapcast.Client }) {
+export function AssignmentClient({ client }: { client: Snapcast.Client }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: client.id,
   });
@@ -178,48 +173,5 @@ export function Assignment({
         ))}
       </div>
     </DndContext>
-  );
-}
-
-export default function SnapWeb() {
-  // TODO
-  // const [showOffline, setShowOffline] = useConfig("showOffline");
-  // const [settingsOpen, setSettingsOpen] = useState(false);
-  // const [isPlaying, setIsPlaying] = useState(false);
-
-  const { snapControl, isConnected, server, connectError } = useSnapcast();
-
-  // const snapstreamRef = useRef<SnapStream | null>(null);
-  // const audioRef = useRef(new Audio());
-
-  function snackbar() {
-    if (isConnected) {
-      return null;
-    }
-    return (
-      <div className="fixed w-max left-1/2 transform -translate-x-1/2 bottom-4">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {connectError + "\nSnapserver host: " + config.baseUrl}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <div className="flex justify-center py-2">
-        <OnDevicePlayerControl />
-      </div>
-      {/* TODO: app bar with about and config */}
-      <Assignment server={server} snapControl={snapControl} />
-      {snackbar()}
-
-      {/* TODO: About dialog */}
-
-      {/* TODO: settings: theme + show offline */}
-    </div>
   );
 }

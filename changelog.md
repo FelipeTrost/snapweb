@@ -13,7 +13,7 @@
 
 - Improve audio latency (PR #93)
 
-_Johannes Pohl <snapweb@badaix.de>  Tue, 06 Aug 2024 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Tue, 06 Aug 2024 00:13:37 +0200_
 
 ## Version 0.7.0
 
@@ -35,7 +35,7 @@ _Johannes Pohl <snapweb@badaix.de>  Tue, 06 Aug 2024 00:13:37 +0200_
 - Switch from the deprecated Create React App (CRA) to Vite
 - Disable spell checking in text fields
 
-_Johannes Pohl <snapweb@badaix.de>  Thu, 21 Mar 2024 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Thu, 21 Mar 2024 00:13:37 +0200_
 
 ## Version 0.6.0
 
@@ -56,7 +56,7 @@ _Johannes Pohl <snapweb@badaix.de>  Thu, 21 Mar 2024 00:13:37 +0200_
 
 - Rewrite of the GUI with React
 
-_Johannes Pohl <snapweb@badaix.de>  Sat, 24 Feb 2024 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Sat, 24 Feb 2024 00:13:37 +0200_
 
 ## Version 0.5.0
 
@@ -70,7 +70,7 @@ _Johannes Pohl <snapweb@badaix.de>  Sat, 24 Feb 2024 00:13:37 +0200_
 
 ### General
 
-_Johannes Pohl <snapweb@badaix.de>  Sun, 05 Feb 2023 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Sun, 05 Feb 2023 00:13:37 +0200_
 
 ## Version 0.4.0
 
@@ -84,7 +84,7 @@ _Johannes Pohl <snapweb@badaix.de>  Sun, 05 Feb 2023 00:13:37 +0200_
 
 ### General
 
-_Johannes Pohl <snapweb@badaix.de>  Wed, 22 Dec 2021 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Wed, 22 Dec 2021 00:13:37 +0200_
 
 ## Version 0.3.0
 
@@ -96,7 +96,7 @@ _Johannes Pohl <snapweb@badaix.de>  Wed, 22 Dec 2021 00:13:37 +0200_
 
 ### General
 
-_Johannes Pohl <snapweb@badaix.de>  Sat, 15 May 2021 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Sat, 15 May 2021 00:13:37 +0200_
 
 ## Version 0.2.0
 
@@ -112,7 +112,7 @@ _Johannes Pohl <snapweb@badaix.de>  Sat, 15 May 2021 00:13:37 +0200_
 
 - Add version information as meta tag (not yet visible in the GUI) (PR #15)
 
-_Johannes Pohl <snapweb@badaix.de>  Tue, 02 Mar 2021 00:13:37 +0200_
+_Johannes Pohl <snapweb@badaix.de> Tue, 02 Mar 2021 00:13:37 +0200_
 
 ## Version 0.1.0
 
@@ -136,5 +136,4 @@ _Johannes Pohl <snapweb@badaix.de>  Tue, 02 Mar 2021 00:13:37 +0200_
 - Misc code improvements (PR #24)
 - Turn on more tsc strictness options (PR #26)
 
-_Johannes Pohl <snapweb@badaix.de>  Mon, 22 Feb 2021 00:13:37 +0200_
-
+_Johannes Pohl <snapweb@badaix.de> Mon, 22 Feb 2021 00:13:37 +0200_

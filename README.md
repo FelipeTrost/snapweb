@@ -7,17 +7,17 @@ mobile devices, with the look and feel of
 ## Develop
 
 1. Add your snapserver host as a local environment var
-    ```bash
-    echo 'VITE_APP_SNAPSERVER_HOST = localhost:1780' > .env.local
-    ```
+   ```bash
+   echo 'VITE_APP_SNAPSERVER_HOST = localhost:1780' > .env.local
+   ```
 1. Install dependencies
-    ```bash
-    npm ci
-    ```
+   ```bash
+   npm ci
+   ```
 1. Run local web server and watcher
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 ## Build for production
 

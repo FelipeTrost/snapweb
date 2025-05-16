@@ -1,23 +1,26 @@
-import React from 'react';
-import { useState } from 'react';
-import { SnapControl, Snapcast } from '../snapcontrol';
-import { Box, Button, Grid, InputAdornment, Menu, MenuItem, Slider, Stack, TextField, Typography, IconButton } from '@mui/material';
-import { Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
-import { VolumeUp as VolumeUpIcon, VolumeOff as VolumeOffIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
-
+import { useState } from "react";
+import { SnapControl, Snapcast } from "../snapcontrol";
+import {
+  VolumeUp as VolumeUpIcon,
+  VolumeOff as VolumeOffIcon,
+  MoreVert as MoreVertIcon,
+} from "@mui/icons-material";
+import { Slider } from "./ui/slider";
+import { ResponsiveDialog } from "./ResponsiveDialog";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { cn } from "../utils";
 
 type ClientProps = {
   client: Snapcast.Client;
-  snapcontrol: SnapControl
+  snapcontrol: SnapControl;
   onDelete: () => void;
   onVolumeChange: () => void;
 };
 
-
 export default function Client(props: ClientProps) {
   const [update, setUpdate] = useState(0);
-  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
-  const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [name, setName] = useState(props.client.config.name);
   const [tmpLatency, setTmpLatency] = useState(props.client.config.latency);
@@ -31,168 +34,179 @@ export default function Client(props: ClientProps) {
     props.onVolumeChange();
   }
 
-  function handleOptionsClicked(event: React.MouseEvent<HTMLButtonElement>) {
+  function handleOptionsClicked() {
     console.debug("handleOptionsClicked");
-    setAnchorEl(event.currentTarget);
-    setOpen(true);
     setName(props.client.config.name);
     setTmpLatency(props.client.config.latency);
     setLatency(props.client.config.latency);
-  }
-
-  function handleMenuClose() {
-    setAnchorEl(null)
-    setOpen(false);
+    setDetailsOpen(true);
   }
 
   function handleDetailsClose(apply: boolean) {
     setDetailsOpen(false);
     if (apply) {
-      console.debug('handleDetailsClose, setting latency to ' + tmpLatency + ', name: ' + name);
+      console.debug(
+        "handleDetailsClose, setting latency to " +
+          tmpLatency +
+          ", name: " +
+          name,
+      );
       props.snapcontrol.setClientName(props.client.id, name);
       props.snapcontrol.setClientLatency(props.client.id, tmpLatency);
-      setName(props.client.config.name)
+      setName(props.client.config.name);
       setLatency(tmpLatency);
     } else {
-      console.debug('handleDetailsClose, setting latency from ' + tmpLatency + ' to ' + latency);
+      console.debug(
+        "handleDetailsClose, setting latency from " +
+          tmpLatency +
+          " to " +
+          latency,
+      );
       props.snapcontrol.setClientLatency(props.client.id, latency);
-      setName(props.client.config.name)
+      setName(props.client.config.name);
       setTmpLatency(latency);
     }
   }
 
-  function handleDetailsClicked() {
-    console.debug("handleDetailsClicked");
-    setDetailsOpen(true);
-    setAnchorEl(null);
-    setOpen(false);
-  }
-
-  function handleNameChange(name: string) {
-    console.debug('handleNameChange: ' + name);
-    setName(name);
-  }
-
   function handleLatencyChange(latency: number) {
-    console.debug('handleLatencyChange: ' + latency);
+    console.debug("handleLatencyChange: " + latency);
     setTmpLatency(latency);
     props.snapcontrol.setClientLatency(props.client.id, latency);
   }
 
   function handleMuteClicked() {
     console.debug("handleMuteClicked");
-    props.snapcontrol.setVolume(props.client.id, props.client.config.volume.percent, !props.client.config.volume.muted);
+    props.snapcontrol.setVolume(
+      props.client.id,
+      props.client.config.volume.percent,
+      !props.client.config.volume.muted,
+    );
     setUpdate(update + 1);
   }
 
-  const menuitems = [];
-  menuitems.push(<MenuItem key='Menu-Details' onClick={() => { handleDetailsClicked() }}>Details</MenuItem>);
-  if (!props.client.connected)
-    menuitems.push(<MenuItem key='Menu-Delete' onClick={() => { props.onDelete(); setAnchorEl(null); setOpen(false); }}>Delete</MenuItem>);
-
-  // console.debug("Render Client " + props.client.host.name + ", id: " + props.client.id);
-
   return (
-    <Box sx={{ opacity: props.client.connected ? 1.0 : 0.5 }} >
-      <Grid container spacing={2} justifyContent="center" alignItems="center" >
-        <Grid item xs={true}>
-          <Stack spacing={-1} direction="column">
-            {/* item style={{ flexGrow: "1" }}> */}
-            <Typography variant="subtitle1" align='left' gutterBottom>
-              {props.client.config.name === "" ? props.client.host.name : props.client.config.name}
-            </Typography>
-            <Stack spacing={2} direction="row" alignItems="center">
-              <IconButton aria-label="Mute" onClick={() => { handleMuteClicked() }}>
-                {props.client.config.volume.muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-              </IconButton>
-              <Slider aria-label="Volume" color="secondary" min={0} max={100} size="small" key={"slider-" + props.client.id} value={props.client.config.volume.percent} onChange={(_, value) => { handleVolumeChange(value as number) }} />
-            </Stack>
-          </Stack>
-        </Grid>
-        <Grid item>
-          <IconButton aria-label="Options" onClick={(event) => { handleOptionsClicked(event); }}>
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            id="basic-menu"
-            anchorEl={anchorEl}
-            open={open}
-            onClose={() => { handleMenuClose() }}
-            MenuListProps={{
-              'aria-labelledby': 'basic-button',
-            }}
-          >
-            {menuitems}
-          </Menu>
-        </Grid>
-      </Grid>
+    <div
+      className={cn({
+        "opacity-50": !props.client.connected,
+      })}
+    >
+      <div className="flex items-center">
+        <Button
+          aria-label="Mute"
+          variant="ghost"
+          size="icon"
+          onClick={handleMuteClicked}
+        >
+          {props.client.config.volume.muted ? (
+            <VolumeOffIcon />
+          ) : (
+            <VolumeUpIcon />
+          )}
+        </Button>
 
-      <Dialog open={detailsOpen} onClose={() => { handleDetailsClose(false) }}>
-        <DialogTitle>Client settings</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus margin="dense" id="name" label="Name" type="text" fullWidth variant="standard"
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => { handleNameChange(event.target.value as string) }}
-            value={name}
-          />
-          <TextField
-            margin="dense" id="latency" label="Latency" type="number" fullWidth
-            value={tmpLatency}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => { handleLatencyChange(Number(event.target.value) || 0) }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">ms</InputAdornment>,
-            }}
-            variant="standard"
-          />
-          <TextField
-            margin="dense" id="client" label="Client" type="text" fullWidth variant="standard"
-            value={props.client.snapclient.name + " " + props.client.snapclient.version}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-          <TextField
-            margin="dense" id="mac" label="MAC" type="text" fullWidth variant="standard"
-            value={props.client.host.mac}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-          <TextField
-            margin="dense" id="id" label="ID" type="text" fullWidth variant="standard"
-            value={props.client.id}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-          <TextField
-            margin="dense" id="ip" label="IP" type="text" fullWidth variant="standard"
-            value={props.client.host.ip}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-          <TextField
-            margin="dense" id="host" label="Host" type="text" fullWidth variant="standard"
-            value={props.client.host.name}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-          <TextField
-            margin="dense" id="os" label="OS" type="text" fullWidth variant="standard"
-            value={props.client.host.os}
-            InputProps={{
-              readOnly: true,
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { handleDetailsClose(false) }}>Cancel</Button>
-          <Button onClick={() => { handleDetailsClose(true) }}>OK</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        <Slider
+          aria-label="Volume"
+          color="secondary"
+          min={0}
+          max={100}
+          value={[props.client.config.volume.percent]}
+          onValueChange={(value) => handleVolumeChange(value[0])}
+          label={
+            props.client.config.name === ""
+              ? props.client.host.name
+              : props.client.config.name
+          }
+          disabled={props.client.config.volume.muted}
+        />
+
+        <Button
+          aria-label="Options"
+          variant="ghost"
+          size="icon"
+          onClick={handleOptionsClicked}
+        >
+          <MoreVertIcon />
+        </Button>
+      </div>
+
+      <ResponsiveDialog
+        open={detailsOpen}
+        setOpen={(newState) => {
+          if (!newState) handleDetailsClose(false);
+        }}
+        title="Client Settings"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => handleDetailsClose(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={() => handleDetailsClose(true)}>OK</Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              className="w-full"
+              placeholder="Name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="latency">Latency</Label>
+            <Input
+              id="latency"
+              value={tmpLatency}
+              type="number"
+              onChange={(event) =>
+                handleLatencyChange(Number(event.target.value) || 0)
+              }
+            />
+          </div>
+
+          {/* TODO: make these all readonly */}
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="client">Client</Label>
+            <Input
+              id="client"
+              value={
+                props.client.snapclient.name +
+                " " +
+                props.client.snapclient.version
+              }
+            />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="mac">Mac</Label>
+            <Input id="mac" value={props.client.host.mac} />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="id">ID</Label>
+            <Input id="id" value={props.client.id} />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="ip">IP</Label>
+            <Input id="ip" value={props.client.host.ip} />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="host">Host</Label>
+            <Input id="host" value={props.client.host.name} />
+          </div>
+
+          <div className="grid w-full items-center gap-1.5">
+            <Label htmlFor="os">OS</Label>
+            <Input id="os" value={props.client.host.os} />
+          </div>
+        </div>
+      </ResponsiveDialog>
+    </div>
   );
 }
-

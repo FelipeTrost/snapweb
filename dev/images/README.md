@@ -1,10 +1,8 @@
-iOS 8 App Icon SVG Template for Inkscape
-===
+# iOS 8 App Icon SVG Template for Inkscape
 
 Originally downloaded from [Kodira](http://kodira.de/2013/11/ios-7-app-icon-template-inkscape-svg-editor/) and modified for use with the new iOS 8 specifications and Mac OS X platform.
 
-Summary
----
+## Summary
 
 > There are a couple of IOS 7 App Icon Template for Photoshop available, but none
 > for Inkscape. We here at Kodira are fond of [Inkscape](http://www.inkscape.org) a great vector graphics
@@ -12,16 +10,15 @@ Summary
 > and iPhone 7 Apps. It includes the new golden ratio grid. For easy export we
 > wrote a small script to quickly render your App icon in all [sizes you will need
 > for iOS development](https://developer.apple.com/library/ios/documentation/userexperience/conceptual/mobilehig/IconMatrix.html). You can download the SVG template and the script here.
-> 
+>
 > - _Kodira_
 
-How to use
----
+## How to use
 
 Download these files. There are two files:
 
-+ AppIconTemplate.svg
-+ resize.sh
+- AppIconTemplate.svg
+- resize.sh
 
 ### Design Instructions
 
@@ -46,4 +43,3 @@ You may need to edit the path to your Inkscape binary for this to work.
 ```sh
 ./resize.sh AppIconTemplate.svg
 ```
-
