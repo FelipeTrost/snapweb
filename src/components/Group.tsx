@@ -54,61 +54,21 @@ function Back() {
   );
 }
 
-function Group({ group }: { group: Snapcast.Group }) {
-  const { snapControl, server } = useSnapcast();
+function GroupSettings({ group }: { group: Snapcast.Group }) {
+  const { server, snapControl } = useSnapcast();
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [update, setUpdate] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [clients, setClients] = useState<GroupClient[]>([]);
+  const [clientsInSettings, setClientsInSettings] = useState<GroupClient[]>([]);
   const [streamId, setStreamId] = useState("");
   const [groupName, setGroupName] = useState("");
-  const [deletedClients, setDeletedClients] = useState<Snapcast.Client[]>([]);
 
-  function getClients(): Snapcast.Client[] {
-    const clients = [];
-    for (const client of group.clients) {
-      if (
-        (client.connected || config.showOffline) &&
-        !deletedClients.includes(client)
-      ) {
-        clients.push(client);
-      }
-    }
-    return clients;
-  }
-
-  const {
-    handleVolumeChangeCommitted,
-    handleVolumeChange,
-    volume,
-    updateGroupVolume,
-    handleMuteClicked,
-  } = useGroupValueChange(group, getClients);
-
-  function handleSettingsClicked(_event: React.MouseEvent<HTMLButtonElement>) {
-    console.debug("handleSettingsClicked");
-
-    const clients: GroupClient[] = [];
-    for (const group of server.groups) {
-      for (const client of group.clients) {
-        const inGroup: boolean = group.clients.includes(client);
-        clients.push({ client: client, inGroup: inGroup, wasInGroup: inGroup });
-      }
-    }
-
-    // this.clients = [];
-    // server.groups.map(group => group.clients.map(client => this.clients.push(client.id)));
-    setSettingsOpen(true);
-    setClients(clients);
-    setStreamId(group.stream_id);
-    setGroupName(group.name);
-  }
-
-  function handleSettingsClose(apply: boolean) {
+  function closeSettings(apply: boolean) {
     console.debug("handleSettingsClose: " + apply);
     if (apply) {
       let changed: boolean = false;
-      for (const element of clients) {
+      for (const element of clientsInSettings) {
         if (element.inGroup !== element.wasInGroup) {
           changed = true;
           break;
@@ -117,7 +77,7 @@ function Group({ group }: { group: Snapcast.Group }) {
 
       if (changed) {
         const groupClients: string[] = [];
-        for (const element of clients)
+        for (const element of clientsInSettings)
           if (element.inGroup) groupClients.push(element.client.id);
         snapControl.setClients(group.id, groupClients);
       }
@@ -132,17 +92,202 @@ function Group({ group }: { group: Snapcast.Group }) {
     setSettingsOpen(false);
   }
 
+  function openSettings(_event: React.MouseEvent<HTMLButtonElement>) {
+    console.debug("handleSettingsClicked");
+
+    const clients: GroupClient[] = [];
+    for (const group of server.groups) {
+      for (const client of group.clients) {
+        const inGroup: boolean = group.clients.includes(client);
+        clients.push({ client: client, inGroup: inGroup, wasInGroup: inGroup });
+      }
+    }
+
+    // this.clients = [];
+    // server.groups.map(group => group.clients.map(client => this.clients.push(client.id)));
+    setSettingsOpen(true);
+    setClientsInSettings(clients);
+    setStreamId(group.stream_id);
+    setGroupName(group.name);
+  }
+
   function handleGroupClientChange(client: Snapcast.Client, inGroup: boolean) {
     console.debug(
       "handleGroupClientChange: " + client.id + ", in group: " + inGroup,
     );
-    const newclients = clients;
-    const idx = newclients.findIndex((element) => element.client === client);
-    newclients[idx].inGroup = inGroup;
-    setClients(newclients);
+    const idx = clientsInSettings.findIndex(
+      (element) => element.client === client,
+    );
+    clientsInSettings[idx].inGroup = inGroup;
+    setClientsInSettings(clientsInSettings);
     // dummy update, since the array was just mutated
     setUpdate(update + 1);
   }
+
+  return (
+    <>
+      <Button
+        aria-label="Options"
+        variant="ghost"
+        size="icon"
+        // TODO: get this button's size right
+        className="text-2xl"
+        onClick={(event) => {
+          openSettings(event);
+        }}
+      >
+        <Settings />
+      </Button>
+
+      <ResponsiveDialog
+        open={settingsOpen}
+        setOpen={(newState) => !newState && closeSettings(false)}
+        title="Group Settings"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => closeSettings(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={() => closeSettings(true)}>OK</Button>
+          </div>
+        }
+      >
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+          <Label htmlFor="group-name">Group Name</Label>
+          <Input
+            id="group-name"
+            placeholder="Group Name"
+            value={groupName}
+            onChange={(event) => setGroupName(event.target.value)}
+          />
+        </div>
+
+        <div className="bg-input h-[1px] w-full my-4" />
+
+        <Label className="mb-4">Clients in Group</Label>
+
+        <div className="flex flex-col gap-4">
+          {clientsInSettings.map((client) => (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={client.client.id}
+                checked={client.inGroup}
+                onCheckedChange={(e) =>
+                  handleGroupClientChange(client.client, e as boolean)
+                }
+              />
+              <Label htmlFor={client.client.id}>
+                {client.client.getName()}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </ResponsiveDialog>
+    </>
+  );
+}
+
+function StreamControl({ stream }: { stream: Snapcast.Stream }) {
+  const { snapControl, server } = useSnapcast();
+
+  if (!stream.properties.canControl) return;
+
+  function handlePlayPauseClicked() {
+    if (stream.properties.playbackStatus === "playing")
+      snapControl.control(stream.id, "pause");
+    else snapControl.control(stream.id, "play");
+  }
+
+  const artUrl = stream.properties.metadata?.artUrl || logo;
+  const title = stream.properties.metadata?.title || "Unknown Title";
+  const artist: string = stream.properties.metadata?.artist
+    ? stream!.properties.metadata.artist.join(", ")
+    : "Unknown Artist";
+
+  return (
+    <>
+      <Stack direction="row" justifyContent="center" alignItems="center">
+        <IconButton
+          aria-label="previous"
+          onClick={() => snapControl.control(stream.id, "previous")}
+        >
+          <SkipPreviousIcon />
+        </IconButton>
+        <IconButton
+          aria-label="play/pause"
+          onClick={() => {
+            handlePlayPauseClicked();
+          }}
+        >
+          {server.getStream(stream.id)?.properties.playbackStatus ===
+          "playing" ? (
+            <PauseIcon />
+          ) : (
+            <PlayArrowIcon />
+          )}
+          {/* sx={{ height: 32, width: 32 }} /> */}
+        </IconButton>
+        <IconButton
+          aria-label="next"
+          onClick={() => {
+            snapControl.control(stream.id, "next");
+          }}
+        >
+          <SkipNextIcon />
+        </IconButton>
+      </Stack>
+
+      {stream.properties.metadata && (
+        <Stack spacing={2} direction="row" alignItems="center">
+          <CardMedia
+            component="img"
+            sx={{ width: 48 }}
+            image={artUrl}
+            alt={title + " cover"}
+          />
+          <Stack
+            spacing={0}
+            direction="column"
+            justifyContent="center"
+            sx={{ flexGrow: 1, overflow: "hidden" }}
+          >
+            <Typography noWrap variant="subtitle1" align="left">
+              {title}
+            </Typography>
+            <Typography noWrap variant="body1" align="left">
+              {artist}
+            </Typography>
+          </Stack>
+        </Stack>
+      )}
+    </>
+  );
+}
+
+function Group({
+  clients,
+  title,
+  stream,
+  group,
+}: {
+  clients: Snapcast.Client[];
+  title: string;
+  stream?: Snapcast.Stream;
+  group?: Snapcast.Group;
+}) {
+  const { snapControl, server } = useSnapcast();
+
+  const [update, setUpdate] = useState(0);
+  const [deletedClients, setDeletedClients] = useState<Snapcast.Client[]>([]);
+
+  const {
+    handleVolumeChangeCommitted,
+    handleVolumeChange,
+    volume,
+    updateGroupVolume,
+    handleMuteClicked,
+    muted,
+  } = useGroupValueChange(group, clients);
 
   function handleClientDelete(client: Snapcast.Client) {
     console.debug("handleClientDelete: " + client.getName());
@@ -167,12 +312,18 @@ function Group({ group }: { group: Snapcast.Group }) {
     setUpdate(update + 1);
   }
 
-  function handlePlayPauseClicked() {
-    if (
-      server.getStream(group.stream_id)?.properties.playbackStatus === "playing"
-    )
-      snapControl.control(group.stream_id, "pause");
-    else snapControl.control(group.stream_id, "play");
+  // console.debug("Render Group " + group.id);
+  const clientComponents = [];
+  for (const client of clients) {
+    clientComponents.push(
+      <Client
+        key={client.id}
+        client={client}
+        snapcontrol={snapControl}
+        onDelete={() => handleClientDelete(client)}
+        onVolumeChange={updateGroupVolume}
+      />,
+    );
   }
 
   function snackbar() {
@@ -209,140 +360,41 @@ function Group({ group }: { group: Snapcast.Group }) {
     ));
   }
 
-  // console.debug("Render Group " + group.id);
-  const groupClients = [];
-  for (const client of getClients()) {
-    groupClients.push(
-      <Client
-        key={client.id}
-        client={client}
-        snapcontrol={snapControl}
-        onDelete={() => {
-          handleClientDelete(client);
-        }}
-        onVolumeChange={updateGroupVolume}
-      />,
-    );
-  }
-  if (groupClients.length === 0) return <div>{snackbar()}</div>;
-
-  const stream = server.getStream(group.stream_id);
-  const artUrl = stream?.properties.metadata?.artUrl || logo;
-  const title = stream?.properties.metadata?.title || "Unknown Title";
-  const artist: string = stream?.properties.metadata?.artist
-    ? stream!.properties.metadata.artist.join(", ")
-    : "Unknown Artist";
-
-  console.debug("Art URL: " + artUrl);
-
-  const allClients = [];
-  for (const group of server.groups)
-    for (const client of group.clients) allClients.push(client);
-
   return (
     <>
       <div className="flex flex-row flex-nowrap justify-between items-start">
         <div className="flex mb-8 justify-between w-full">
           <Back />
-          <CardTitle>{group?.name}</CardTitle>
-          <Button
-            aria-label="Options"
-            variant="ghost"
-            size="icon"
-            // TODO: get this button's size right
-            className="text-2xl"
-            onClick={(event) => {
-              handleSettingsClicked(event);
-            }}
-          >
-            <Settings />
-          </Button>
+          <CardTitle>{title}</CardTitle>
+          {group ? <GroupSettings group={group} /> : <div />}
         </div>
       </div>
 
-      <Select
-        value={group.stream_id}
-        onValueChange={(stream: string) => {
-          setStreamId(stream);
-          snapControl.setStream(group.id, stream);
-        }}
-      >
-        <SelectTrigger className="w-[180px] mb-4">
-          <SelectValue placeholder="Theme" />
-        </SelectTrigger>
-        <SelectContent>
-          {server.streams.map((stream) => (
-            <SelectItem key={stream.id} value={stream.id}>
-              {stream.id}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {stream?.properties.canControl && (
-        <Stack direction="row" justifyContent="center" alignItems="center">
-          <IconButton
-            aria-label="previous"
-            onClick={() => {
-              snapControl.control(group.stream_id, "previous");
-            }}
-          >
-            <SkipPreviousIcon />
-          </IconButton>
-          <IconButton
-            aria-label="play/pause"
-            onClick={() => {
-              handlePlayPauseClicked();
-            }}
-          >
-            {server.getStream(group.stream_id)?.properties.playbackStatus ===
-            "playing" ? (
-              <PauseIcon />
-            ) : (
-              <PlayArrowIcon />
-            )}
-            {/* sx={{ height: 32, width: 32 }} /> */}
-          </IconButton>
-          <IconButton
-            aria-label="next"
-            onClick={() => {
-              snapControl.control(group.stream_id, "next");
-            }}
-          >
-            <SkipNextIcon />
-          </IconButton>
-        </Stack>
+      {group && (
+        <Select
+          value={group.stream_id}
+          onValueChange={(stream: string) =>
+            snapControl.setStream(group.id, stream)
+          }
+        >
+          <SelectTrigger className="w-[180px] mb-4">
+            <SelectValue placeholder="Theme" />
+          </SelectTrigger>
+          <SelectContent>
+            {server.streams.map((stream) => (
+              <SelectItem key={stream.id} value={stream.id}>
+                {stream.id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
 
-      {stream?.properties.metadata && (
-        <Stack spacing={2} direction="row" alignItems="center">
-          <CardMedia
-            component="img"
-            sx={{ width: 48 }}
-            image={artUrl}
-            alt={title + " cover"}
-          />
-          <Stack
-            spacing={0}
-            direction="column"
-            justifyContent="center"
-            sx={{ flexGrow: 1, overflow: "hidden" }}
-          >
-            <Typography noWrap variant="subtitle1" align="left">
-              {title}
-            </Typography>
-            <Typography noWrap variant="body1" align="left">
-              {artist}
-            </Typography>
-          </Stack>
-        </Stack>
-      )}
-
-      {groupClients.length > 1 && (
+      {clientComponents.length > 1 && (
         <>
           <div className="flex flex-row">
             <IconButton aria-label="Mute" onClick={handleMuteClicked}>
-              {group.muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
             </IconButton>
 
             <Slider
@@ -353,7 +405,7 @@ function Group({ group }: { group: Snapcast.Group }) {
               value={[volume]}
               onValueChange={(value) => handleVolumeChange(value[0])}
               onValueCommit={(value) => handleVolumeChangeCommitted(value[0])}
-              disabled={group.muted}
+              disabled={muted}
             />
           </div>
 
@@ -361,55 +413,8 @@ function Group({ group }: { group: Snapcast.Group }) {
         </>
       )}
 
-      <div className="flex flex-col gap-10">{groupClients}</div>
+      <div className="flex flex-col gap-10">{clientComponents}</div>
 
-      <ResponsiveDialog
-        open={settingsOpen}
-        setOpen={(newState) => !newState && handleSettingsClose(false)}
-        title="Group Settings"
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              onClick={() => handleSettingsClose(false)}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => handleSettingsClose(true)}>OK</Button>
-          </div>
-        }
-      >
-        <div className="grid w-full max-w-sm items-center gap-1.5">
-          <Label htmlFor="group-name">Group Name</Label>
-          <Input
-            id="group-name"
-            placeholder="Group Name"
-            value={groupName}
-            onChange={(event) => setGroupName(event.target.value)}
-          />
-        </div>
-
-        <div className="bg-input h-[1px] w-full my-4" />
-
-        <Label className="mb-4">Clients in Group</Label>
-
-        <div className="flex flex-col gap-4">
-          {clients.map((client) => (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id={client.client.id}
-                checked={client.inGroup}
-                onCheckedChange={(e) =>
-                  handleGroupClientChange(client.client, e as boolean)
-                }
-              />
-              <Label htmlFor={client.client.id}>
-                {client.client.getName()}
-              </Label>
-            </div>
-          ))}
-        </div>
-      </ResponsiveDialog>
       {snackbar()}
     </>
   );
@@ -427,7 +432,7 @@ function Loading() {
   );
 }
 
-export default function GroupPage() {
+export function GroupPage() {
   const { snapControl, server, isConnected } = useSnapcast();
   const groupId = useParams<{ groupId: string }>().groupId;
 
@@ -448,9 +453,54 @@ export default function GroupPage() {
       </div>
     );
 
+  const stream = server.getStream(group.stream_id);
+
   return (
     <div className="pt-8">
-      <Group group={group} />
+      <Group
+        group={group}
+        clients={group.clients}
+        stream={stream ?? undefined}
+        title={group.name}
+      />
+    </div>
+  );
+}
+
+export function StreamPage() {
+  const { snapControl, server, isConnected } = useSnapcast();
+  const streamId = useParams<{ streamId: string }>().streamId;
+  const stream = snapControl.getStream(streamId);
+
+  // status_req_id will be some number when the page loads and the ws connects,
+  // once we get a status response it will be -1, and a refresh will be triggered
+  // by having a new server object
+  if (!isConnected || snapControl.status_req_id !== -1) return <Loading />;
+
+  if (!stream)
+    return (
+      <div className="pt-8">
+        <div className="flex mb-8 justify-between w-full">
+          <Back />
+        </div>
+
+        <h2 className="text-2xl font-bold">Group not found</h2>
+      </div>
+    );
+
+  const clients = [];
+  for (const group of server.groups) {
+    if (group.stream_id !== stream.id) continue;
+    for (const client of group.clients) {
+      if (client.connected || config.showOffline) {
+        clients.push(client);
+      }
+    }
+  }
+
+  return (
+    <div className="pt-8">
+      <Group clients={clients} stream={stream} title={stream.id} />
     </div>
   );
 }

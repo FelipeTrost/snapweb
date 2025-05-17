@@ -18,7 +18,7 @@ import {
 import { Slider } from "./ui/slider";
 import { useGroupValueChange } from "../volume-utils";
 import { Button } from "./ui/button";
-import { Speaker,WifiOff } from "lucide-react";
+import { Speaker, WifiOff } from "lucide-react";
 import { OnDevicePlayerControl } from "./OnDevicePlayerControl";
 import { SettingsDialogButton } from "./Settings";
 
@@ -44,7 +44,7 @@ function AssignmentClient({ client }: { client: Snapcast.Client }) {
     >
       <CardContent className="flex justify-center px-2 text-center">
         <div className="flex items-center gap-2 overflow-hidden">
-          {client.connected? <Speaker />:<WifiOff />}
+          {client.connected ? <Speaker /> : <WifiOff />}
           <span className="truncate">{client.getName()}</span>
         </div>
       </CardContent>
@@ -158,13 +158,13 @@ export function AssignmentSource({ stream }: { stream: Snapcast.Stream }) {
 
   return (
     <Card
-      // onClick={() => navigate(`/${group.id}`)}
+      onClick={() => navigate(`/g/${stream.id}`)}
       ref={setNodeRef}
       className={cn([{ "bg-gray-200": isOver }])}
     >
       {stream.id && (
         <CardHeader>
-          <Link to={`/${stream.id}`}>
+          <Link to={`/g/${stream.id}`}>
             <CardTitle className="text-xl">{stream.id}</CardTitle>
           </Link>
         </CardHeader>
