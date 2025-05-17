@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { Snapcast, SnapControl } from "@/src/snapcontrol";
-import { config } from "./config";
+import { config, useConfig } from "./config";
 import { SnapStream } from "./snapstream";
 import snapcast512 from "./assets/snapcast-512.png";
 import silence from "./assets/10-seconds-of-silence.mp3";
@@ -225,10 +225,10 @@ function updateMediaSession(audio: HTMLAudioElement, streamId: string) {
 }
 
 export function SnapcastProvider({ children }: { children: ReactNode }) {
+  const { baseUrl: serverUrl } = useConfig();
   const [server, setServer] = useState(snapControl.server);
   const [_update, setUpdate] = useState(0);
   const [isConnected, setConnected] = useState(false);
-  const [serverUrl, _setServerUrl] = useState(config.baseUrl);
   const [connectError, setConnectError] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -269,15 +269,14 @@ export function SnapcastProvider({ children }: { children: ReactNode }) {
     return () => snapControl.disconnect();
   }, []);
 
-  // useEffect(() => {
-  //   console.debug("serverUrl updated: " + serverUrl);
-  //   setServer(new Snapcast.Server());
-  //   snapControlRef.current.connect(serverUrl);
-  //   const connection = snapControlRef.current;
-  //   return () => {
-  //     connection.disconnect();
-  //   };
-  // }, [serverUrl]);
+  useEffect(() => {
+    console.debug("serverUrl updated: " + serverUrl);
+    setServer(new Snapcast.Server());
+    snapControl.connect(serverUrl);
+    return () => {
+      snapControl.disconnect();
+    };
+  }, [serverUrl]);
 
   // Browser media playback
 

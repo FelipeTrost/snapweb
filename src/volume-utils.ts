@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Snapcast } from "./snapcontrol";
 import { useSnapcast } from "./use-snapcast";
+import { useConfig } from "./config";
 
 type GroupVolumeChange = {
   volumeEntered: boolean;
@@ -17,19 +18,39 @@ function getGroupVolume(clients: Snapcast.Client[]) {
 // NOTE: wouter destroys and mounts pages, that's why this shows the correct state, if
 // if it didn't this hook would need a way to update once the colume is changed somewhere else
 export function useGroupValueChange(
-  group: Snapcast.Group,
-  getClients: () => Snapcast.Client[],
+  group: Snapcast.Group | undefined,
+  clients: Snapcast.Client[],
 ) {
   const { snapControl } = useSnapcast();
+  const config = useConfig();
+
   const groupVolumeChange = useRef<GroupVolumeChange>({
     volumeEntered: true,
     client_volumes: new Map<string, number>(),
     group_volume: 0,
   });
   const [volume, setVolume] = useState(() => {
-    return getGroupVolume(getClients());
+    return getGroupVolume(clients);
   });
   const setUpdate = useState(false)[1];
+
+  useEffect(() => {
+    setVolume(getGroupVolume(clients));
+  }, [clients]);
+
+  let muted: boolean;
+  if (group) {
+    muted = group.muted;
+  } else {
+    muted = true;
+    for (const client of clients) {
+      if (config.showOffline && !client.connected) continue;
+      if (!client.config.volume.muted) {
+        muted = false;
+        break;
+      }
+    }
+  }
 
   function handleVolumeChangeCommitted(value: number) {
     console.debug("handleVolumeChangeCommitted: " + value);
@@ -41,7 +62,7 @@ export function useGroupValueChange(
     if (groupVolumeChange.current.volumeEntered) {
       groupVolumeChange.current.client_volumes.clear();
       groupVolumeChange.current.group_volume = 0;
-      for (const client of getClients()) {
+      for (const client of clients) {
         groupVolumeChange.current.client_volumes.set(
           client.id,
           client.config.volume.percent,
@@ -64,7 +85,7 @@ export function useGroupValueChange(
         (value - groupVolumeChange.current.group_volume) /
         (100 - groupVolumeChange.current.group_volume);
 
-    for (const client of getClients()) {
+    for (const client of clients) {
       let new_volume = groupVolumeChange.current.client_volumes.get(client.id)!;
       if (delta < 0) new_volume -= ratio * new_volume;
       else new_volume += ratio * (100 - new_volume);
@@ -78,13 +99,19 @@ export function useGroupValueChange(
 
   function handleMuteClicked() {
     console.debug("handleMuteClicked");
-    group.muted = !group.muted;
-    snapControl.muteGroup(group.id, group.muted);
-    setUpdate((prev) => !prev);
+    if (group) {
+      group.muted = !group.muted;
+      snapControl.muteGroup(group.id, group.muted);
+      setUpdate((prev) => !prev);
+    } else {
+      for (const client of clients) {
+        snapControl.setVolume(client.id, client.config.volume.percent, !muted);
+      }
+    }
   }
 
   function updateGroupVolume() {
-    setVolume(getGroupVolume(getClients()));
+    setVolume(getGroupVolume(clients));
   }
 
   return {
@@ -93,5 +120,6 @@ export function useGroupValueChange(
     handleMuteClicked,
     volume,
     updateGroupVolume,
+    muted,
   };
 }

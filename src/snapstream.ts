@@ -1,5 +1,5 @@
 import Flac from "libflacjs/dist/libflac.js";
-import { getPersistentValue } from "./config.ts";
+import { getPersistentValue } from "./config";
 import {
   AudioContext,
   IAudioBuffer,

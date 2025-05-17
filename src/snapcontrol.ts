@@ -286,6 +286,7 @@ class SnapControl {
     this.status_req_id = -1;
     this.timer = null;
     this.reconnection_attempts = 0;
+    this.responseCallbacks = new Set();
   }
 
   public connect(baseUrl: string) {
@@ -350,6 +351,15 @@ class SnapControl {
       }
     }
     if (this.onConnectionChanged) this.onConnectionChanged(this, false);
+  }
+
+  responseCallbacks: Set<(_: any) => void>;
+  public addResponseCallback(callback: (_: any) => void) {
+    return this.responseCallbacks.add(callback);
+  }
+
+  public removeResponseCallback(callback: (_: any) => void) {
+    return this.responseCallbacks.delete(callback);
   }
 
   onChange: ((_this: SnapControl, _server: Snapcast.Server) => any) | null;
@@ -534,6 +544,7 @@ class SnapControl {
       id: group_id,
       clients: clients,
     });
+    return this.status_req_id;
   }
 
   public muteGroup(group_id: string, mute: boolean) {
@@ -568,6 +579,7 @@ class SnapControl {
     const json_msg = JSON.parse(msg);
     const is_response: boolean = json_msg.id !== undefined;
     // console.debug("Received " + (is_response ? "response" : "notification") + ", json: " + JSON.stringify(json_msg))
+
     if (is_response) {
       if (json_msg.id === this.status_req_id) {
         this.server = new Snapcast.Server(json_msg.result.server);
@@ -597,6 +609,8 @@ class SnapControl {
         console.debug("no onChange");
       }
     }
+
+    for (const callback of this.responseCallbacks) callback(json_msg);
   }
 
   // public onChange?: OnChange;
