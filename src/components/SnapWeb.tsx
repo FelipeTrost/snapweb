@@ -26,6 +26,7 @@ function AssignmentClient({ client }: { client: Snapcast.Client }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: client.id,
   });
+
   const style = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
@@ -52,7 +53,7 @@ function AssignmentClient({ client }: { client: Snapcast.Client }) {
   );
 }
 
-function AssignmentGroup({ group }: { group: Snapcast.Group }) {
+function Group({ group }: { group: Snapcast.Group }) {
   const config = useConfig();
 
   const clients = [];
@@ -129,7 +130,7 @@ function AssignmentGroup({ group }: { group: Snapcast.Group }) {
   );
 }
 
-export function AssignmentSource({ stream }: { stream: Snapcast.Stream }) {
+export function Source({ stream }: { stream: Snapcast.Stream }) {
   const { server } = useSnapcast();
   const config = useConfig();
 
@@ -298,14 +299,9 @@ function moveClientToGroup(
   if (newClients.length !== 0) snapControl.setClients(group.id!, newClients);
 }
 
-function Assignment({
-  server,
-  snapControl,
-}: {
-  server: Snapcast.Server;
-  snapControl: SnapControl;
-}) {
+export default function SnapWeb() {
   const config = useConfig();
+  const { snapControl, isConnected, server, connectError } = useSnapcast();
 
   function onDragEnd(event: DragEndEvent) {
     const intoId = event.over?.id as string;
@@ -319,24 +315,13 @@ function Assignment({
   let assignment;
   if (config.appMode === "group") {
     assignment = server.groups.map((group) => (
-      <AssignmentGroup key={group.id} group={group} />
+      <Group key={group.id} group={group} />
     ));
   } else {
     assignment = server.streams.map((stream) => (
-      <AssignmentSource key={stream.id} stream={stream} />
+      <Source key={stream.id} stream={stream} />
     ));
   }
-
-  return (
-    <DndContext onDragEnd={onDragEnd}>
-      <div className="flex flex-col gap-3">{assignment}</div>
-    </DndContext>
-  );
-}
-
-export default function SnapWeb() {
-  const config = useConfig();
-  const { snapControl, isConnected, server, connectError } = useSnapcast();
 
   return (
     <div className="relative">
@@ -344,8 +329,10 @@ export default function SnapWeb() {
         <OnDevicePlayerControl />
         <SettingsDialogButton />
       </div>
-      {/* TODO: app bar with about and config */}
-      <Assignment server={server} snapControl={snapControl} />
+
+      <DndContext onDragEnd={onDragEnd}>
+        <div className="flex flex-col gap-3">{assignment}</div>
+      </DndContext>
 
       {!isConnected && (
         <div className="fixed w-max left-1/2 transform -translate-x-1/2 bottom-4">
