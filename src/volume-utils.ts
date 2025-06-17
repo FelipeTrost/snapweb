@@ -44,8 +44,10 @@ export function useGroupValueChange(
   } else {
     muted = true;
     for (const client of clients) {
-      if (config.showOffline && !client.connected) continue;
-      if (!client.config.volume.muted) {
+      if (
+        (client.connected || config.showOffline) &&
+        !client.config.volume.muted
+      ) {
         muted = false;
         break;
       }
