@@ -110,5 +110,5 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useConfig(): ContextType {
-  return use(ConfigContext);
+  return use(ConfigContext)!;
 }
