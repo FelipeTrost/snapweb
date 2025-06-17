@@ -3,14 +3,7 @@ import { useState } from "react";
 import Client from "./Client";
 import logo from "../assets/logo192.png";
 import { Snapcast } from "../snapcontrol";
-import {
-  Alert,
-  CardMedia,
-  Snackbar,
-  Stack,
-  Typography,
-  IconButton,
-} from "@mui/material";
+import { Alert, Snackbar, Stack, Typography, IconButton } from "@mui/material";
 import {
   VolumeUp as VolumeUpIcon,
   VolumeOff as VolumeOffIcon,
@@ -33,7 +26,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useSnapcast } from "../use-snapcast";
 import { Link, useParams } from "wouter";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, CircleHelp, Settings } from "lucide-react";
 import { useGroupValueChange } from "../volume-utils";
 import { config } from "../config";
 import { Button } from "./ui/button";
@@ -187,15 +180,15 @@ function GroupSettings({ group }: { group: Snapcast.Group }) {
   );
 }
 
-function StreamControl({ stream }: { stream: Snapcast.Stream }) {
+function StreamControl({ stream }: { stream?: Snapcast.Stream }) {
   const { snapControl, server } = useSnapcast();
 
-  if (!stream.properties.canControl) return;
+  if (stream === undefined) return;
 
   function handlePlayPauseClicked() {
-    if (stream.properties.playbackStatus === "playing")
-      snapControl.control(stream.id, "pause");
-    else snapControl.control(stream.id, "play");
+    if (stream!.properties.playbackStatus === "playing")
+      snapControl.control(stream!.id, "pause");
+    else snapControl.control(stream!.id, "play");
   }
 
   const artUrl = stream.properties.metadata?.artUrl || logo;
@@ -206,45 +199,42 @@ function StreamControl({ stream }: { stream: Snapcast.Stream }) {
 
   return (
     <>
-      <Stack direction="row" justifyContent="center" alignItems="center">
-        <IconButton
-          aria-label="previous"
-          onClick={() => snapControl.control(stream.id, "previous")}
-        >
-          <SkipPreviousIcon />
-        </IconButton>
-        <IconButton
-          aria-label="play/pause"
-          onClick={() => {
-            handlePlayPauseClicked();
-          }}
-        >
-          {server.getStream(stream.id)?.properties.playbackStatus ===
-          "playing" ? (
-            <PauseIcon />
-          ) : (
-            <PlayArrowIcon />
-          )}
-          {/* sx={{ height: 32, width: 32 }} /> */}
-        </IconButton>
-        <IconButton
-          aria-label="next"
-          onClick={() => {
-            snapControl.control(stream.id, "next");
-          }}
-        >
-          <SkipNextIcon />
-        </IconButton>
-      </Stack>
+      {stream.properties.canControl && (
+        <Stack direction="row" justifyContent="center" alignItems="center">
+          <IconButton
+            aria-label="previous"
+            onClick={() => snapControl.control(stream.id, "previous")}
+          >
+            <SkipPreviousIcon />
+          </IconButton>
+          <IconButton
+            aria-label="play/pause"
+            onClick={() => {
+              handlePlayPauseClicked();
+            }}
+          >
+            {server.getStream(stream.id)?.properties.playbackStatus ===
+            "playing" ? (
+              <PauseIcon />
+            ) : (
+              <PlayArrowIcon />
+            )}
+            {/* sx={{ height: 32, width: 32 }} /> */}
+          </IconButton>
+          <IconButton
+            aria-label="next"
+            onClick={() => {
+              snapControl.control(stream.id, "next");
+            }}
+          >
+            <SkipNextIcon />
+          </IconButton>
+        </Stack>
+      )}
 
       {stream.properties.metadata && (
         <Stack spacing={2} direction="row" alignItems="center">
-          <CardMedia
-            component="img"
-            sx={{ width: 48 }}
-            image={artUrl}
-            alt={title + " cover"}
-          />
+          <img src={artUrl} alt={title + " cover"} />
           <Stack
             spacing={0}
             direction="column"
@@ -312,20 +302,6 @@ function Group({
     setUpdate(update + 1);
   }
 
-  // console.debug("Render Group " + group.id);
-  const clientComponents = [];
-  for (const client of clients) {
-    clientComponents.push(
-      <Client
-        key={client.id}
-        client={client}
-        snapcontrol={snapControl}
-        onDelete={() => handleClientDelete(client)}
-        onVolumeChange={updateGroupVolume}
-      />,
-    );
-  }
-
   function snackbar() {
     return deletedClients.map((client) => (
       <Snackbar
@@ -390,7 +366,7 @@ function Group({
         </Select>
       )}
 
-      {clientComponents.length > 1 && (
+      {clients.length > 1 && (
         <>
           <div className="flex flex-row">
             <IconButton aria-label="Mute" onClick={handleMuteClicked}>
@@ -413,7 +389,26 @@ function Group({
         </>
       )}
 
-      <div className="flex flex-col gap-10">{clientComponents}</div>
+      <StreamControl stream={stream} />
+
+      <div className="flex flex-col gap-10">
+        {clients.map((client) => (
+          <Client
+            key={client.id}
+            client={client}
+            snapcontrol={snapControl}
+            onDelete={() => handleClientDelete(client)}
+            onVolumeChange={updateGroupVolume}
+          />
+        ))}
+      </div>
+
+      {clients.length === 0 && (
+        <div className="flex flex-col gap-2 justify-center text-center items-center mt-10">
+          <h1 className="text-xl font-bold">No Clients</h1>
+          <CircleHelp className="size-8" />
+        </div>
+      )}
 
       {snackbar()}
     </>
@@ -470,7 +465,10 @@ export function GroupPage() {
 export function StreamPage() {
   const { snapControl, server, isConnected } = useSnapcast();
   const streamId = useParams<{ streamId: string }>().streamId;
-  const stream = snapControl.getStream(streamId);
+  let stream;
+  try {
+    stream = snapControl.getStream(streamId);
+  } catch (_e) {}
 
   // status_req_id will be some number when the page loads and the ws connects,
   // once we get a status response it will be -1, and a refresh will be triggered
