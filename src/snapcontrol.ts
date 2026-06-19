@@ -285,7 +285,6 @@ class SnapControl {
     this.msg_id = 0;
     this.status_req_id = -1;
     this.timer = null;
-    this.reconnection_attempts = 0;
     this.responseCallbacks = new Set();
   }
 
@@ -296,7 +295,6 @@ class SnapControl {
       this.connection.onmessage = (msg: MessageEvent) =>
         this.onMessage(msg.data);
       this.connection.onopen = () => {
-        this.reconnection_attempts = 0;
         this.status_req_id = this.sendRequest("Server.GetStatus");
         if (this.onConnectionChanged) this.onConnectionChanged(this, true);
       };
@@ -310,36 +308,18 @@ class SnapControl {
             false,
             "Connection lost, trying to reconnect.",
           );
-        const reconnectionDelay = this.getReconnectDelay();
-        this.timer = setTimeout(
-          () => this.connect(baseUrl),
-          reconnectionDelay * 1000,
-        );
+        this.timer = setTimeout(() => this.connect(baseUrl), 0);
       };
     } catch (e) {
-      const reconnectionDelay = this.getReconnectDelay();
-      console.info(
-        'Exception while connecting: "' +
-          e +
-          '", reconnecting in ' +
-          reconnectionDelay +
-          "s",
-      );
+      console.info('Exception while connecting: "' + e + "s");
       if (this.onConnectionChanged)
         this.onConnectionChanged(
           this,
           false,
           'Exception while connecting: "' + e + '", trying to reconnect.',
         );
-      this.timer = setTimeout(
-        () => this.connect(baseUrl),
-        reconnectionDelay * 1000,
-      );
+      this.timer = setTimeout(() => this.connect(baseUrl), 0);
     }
-  }
-
-  private getReconnectDelay() {
-    return Math.min(1.1 ** this.reconnection_attempts++ - 1, 1);
   }
 
   public disconnect() {
@@ -621,7 +601,6 @@ class SnapControl {
   msg_id: number;
   status_req_id: number;
   timer: ReturnType<typeof setTimeout> | null;
-  reconnection_attempts: number;
 }
 
 export { SnapControl };
