@@ -335,7 +335,7 @@ export default function SnapWeb() {
       </DndContext>
 
       {!isConnected && (
-        <div className="fixed w-max left-1/2 transform -translate-x-1/2 bottom-4">
+        <div className="fixed w-max left-1/2 transform -translate-x-1/2 bottom-4 max-w-full px-4">
           <Alert variant="destructive">
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
