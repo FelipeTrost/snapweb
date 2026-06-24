@@ -53,42 +53,43 @@ function AssignmentClient({ client }: { client: Snapcast.Client }) {
   );
 }
 
-function Group({ group }: { group: Snapcast.Group }) {
-  const config = useConfig();
-
-  const clients = [];
-  for (const client of group.clients) {
-    if (client.connected || config.showOffline) {
-      clients.push(client);
-    }
-  }
-
+function Aggrupation({
+  group,
+  clients,
+  id,
+  name,
+  link,
+}: {
+  group?: Snapcast.Group;
+  clients: Snapcast.Client[];
+  id: string;
+  name: string;
+  link: string;
+}) {
   const {
     handleVolumeChangeCommitted,
     handleVolumeChange,
     volume,
     handleMuteClicked,
+    muted,
   } = useGroupValueChange(group, clients);
   const navigate = useLocation()[1];
-  const { isOver, setNodeRef } = useDroppable({
-    id: group.id,
-  });
+  const { isOver, setNodeRef } = useDroppable({ id });
 
   if (clients.length === 0) return null;
 
   return (
     <Card
-      onClick={() => navigate(`/${group.id}`)}
+      onClick={() => navigate(link)}
       ref={setNodeRef}
       className={cn([{ "bg-gray-200": isOver }])}
     >
-      {group.name && (
-        <CardHeader>
-          <Link to={`/${group.id}`}>
-            <CardTitle className="text-xl">{group.name}</CardTitle>
-          </Link>
-        </CardHeader>
-      )}
+      <CardHeader>
+        <Link to={`/${id}`}>
+          <CardTitle className="text-xl">{name}</CardTitle>
+        </Link>
+      </CardHeader>
+
       <CardContent>
         <div className="flex flex-row mb-4 items-center">
           <Button
@@ -101,7 +102,7 @@ function Group({ group }: { group: Snapcast.Group }) {
               e.stopPropagation();
             }}
           >
-            {group.muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+            {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
           </Button>
 
           <Slider
@@ -112,7 +113,7 @@ function Group({ group }: { group: Snapcast.Group }) {
             value={[volume]}
             onValueChange={(value) => handleVolumeChange(value[0])}
             onValueCommit={(value) => handleVolumeChangeCommitted(value[0])}
-            disabled={group.muted}
+            disabled={muted}
             // Avoid navigating to group when slider is used
             onClick={(e) => e.stopPropagation()}
           />
@@ -130,6 +131,31 @@ function Group({ group }: { group: Snapcast.Group }) {
   );
 }
 
+function Group({ group }: { group: Snapcast.Group }) {
+  const config = useConfig();
+
+  const clients = [];
+  for (const client of group.clients) {
+    if (client.connected || config.showOffline) {
+      clients.push(client);
+    }
+  }
+  if (clients.length === 0) return null;
+
+  const link = `/${group.id}`;
+  const name = group.name || group.id;
+
+  return (
+    <Aggrupation
+      group={group}
+      clients={clients}
+      id={group.id}
+      name={name}
+      link={link}
+    />
+  );
+}
+
 export function Source({ stream }: { stream: Snapcast.Stream }) {
   const { server } = useSnapcast();
   const config = useConfig();
@@ -144,73 +170,11 @@ export function Source({ stream }: { stream: Snapcast.Stream }) {
     }
   }
 
-  const {
-    handleVolumeChangeCommitted,
-    handleVolumeChange,
-    volume,
-    handleMuteClicked,
-    muted,
-  } = useGroupValueChange(undefined, clients);
-
-  const navigate = useLocation()[1];
-  const { isOver, setNodeRef } = useDroppable({
-    id: stream.id,
-  });
+  const link = `/g/${stream.id}`;
+  const name = stream.id;
 
   return (
-    <Card
-      onClick={() => navigate(`/g/${stream.id}`)}
-      ref={setNodeRef}
-      className={cn([{ "bg-gray-200": isOver }])}
-    >
-      {stream.id && (
-        <CardHeader>
-          <Link to={`/g/${stream.id}`}>
-            <CardTitle className="text-xl">{stream.id}</CardTitle>
-          </Link>
-        </CardHeader>
-      )}
-
-      <CardContent>
-        {clients.length > 0 && (
-          <div className="flex flex-row mb-4 items-center">
-            <Button
-              aria-label="Mute"
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                handleMuteClicked();
-                // Prevent navigating to group when muting
-                e.stopPropagation();
-              }}
-            >
-              {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </Button>
-
-            <Slider
-              aria-label="Volume"
-              color="secondary"
-              min={0}
-              max={100}
-              value={[volume]}
-              onValueChange={(value) => handleVolumeChange(value[0])}
-              onValueCommit={(value) => handleVolumeChangeCommitted(value[0])}
-              disabled={muted}
-              // Avoid navigating to group when slider is used
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
-
-        <h1 className="font-bold mb-2">Speakers</h1>
-
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {clients.map((client) => (
-            <AssignmentClient key={client.id} client={client} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <Aggrupation clients={clients} id={stream.id} name={name} link={link} />
   );
 }
 
@@ -250,7 +214,7 @@ function moveClientToStream(
       .filter((id) => id !== clientId),
   );
 
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: number | null = null;
   function callback(json_msg: any) {
     if (!("id" in json_msg) || json_msg.id !== reqId) return;
 
