@@ -30,6 +30,7 @@ const keys = {
   theme: "theme",
   showoffline: "showoffline",
   appmode: "appmode",
+  grouptype: "grouptype",
 };
 
 export type Theme = "system" | "light" | "dark";
@@ -64,6 +65,15 @@ export const config = {
   set appMode(value: "group" | "stream") {
     setPersistentValue(keys.showoffline, value);
   },
+  get groupType() {
+    // TODO: change default to group
+    return getPersistentValue(keys.grouptype, "stream") as
+      | "separate-page"
+      | "flat-list";
+  },
+  set groupType(value: "separate-page" | "flat-list") {
+    setPersistentValue(keys.grouptype, value);
+  },
 };
 
 // React context
@@ -90,6 +100,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [theme, settheme] = setConfigState("theme");
   const [showOffline, setshowOffline] = setConfigState("showOffline");
   const [appMode, setappMode] = setConfigState("appMode");
+  const [groupType, setgroupType] = setConfigState("groupType");
 
   return (
     <ConfigContext.Provider
@@ -102,6 +113,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
         setshowOffline,
         appMode,
         setappMode,
+        groupType,
+        setgroupType,
       }}
     >
       {children}

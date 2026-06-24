@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { config, Theme, useConfig } from "../config";
+import { Theme, useConfig } from "../config";
 import { ResponsiveDialog } from "./ResponsiveDialog.tsx";
 import { Label } from "./ui/label.tsx";
 import { Input } from "./ui/input.tsx";
@@ -45,6 +45,7 @@ export function SettingsDialog({
   const [appMode, setAppMode] = useState(config.appMode);
   const [theme, setTheme] = useState(config.theme);
   const [showOffline, setShowOffline] = useState(config.showOffline);
+  const [groupType, setGroupType] = useState(config.groupType);
 
   function handleClose(apply: boolean) {
     if (apply) {
@@ -52,6 +53,7 @@ export function SettingsDialog({
       config.setappMode(appMode);
       config.settheme(theme);
       config.setshowOffline(showOffline);
+      config.setgroupType(groupType);
     }
 
     onClose(false);
@@ -84,6 +86,25 @@ export function SettingsDialog({
               setServerurl(event.target.value as string);
             }}
           />
+        </div>
+
+        <div className="grid w-full items-center gap-1.5">
+          <Label htmlFor="grouptype">Group Type</Label>
+          <Select
+            id="grouptype"
+            value={groupType}
+            onValueChange={(groupType: string) =>
+              setGroupType(groupType as "separate-page" | "flat-list")
+            }
+          >
+            <SelectTrigger className="w-[180px] ">
+              <SelectValue placeholder="Group Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="separate-page">Separate Page</SelectItem>
+              <SelectItem value="flat-list">Flat List</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid w-full items-center gap-1.5">
